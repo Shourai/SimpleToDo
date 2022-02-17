@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -28,12 +29,13 @@ func CreateDB() {
 	createTable(db)
 
 	addTask(db, task{Name: "First task", Done: 0})
+	deleteTask(db, 2)
 }
 
 func createTable(db *sql.DB) {
 	sqlTable := `
 	CREATE TABLE IF NOT EXISTS items(
-			ID INTEGER PRIMARY KEY AUTOINCREMENT,
+			ID INTEGER PRIMARY KEY,
 			Name TEXT NOT NULL,
 			Done INTEGER NOT NULL
 	);
@@ -67,4 +69,23 @@ func addTask(db *sql.DB, task task) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func deleteTask(db *sql.DB, id int) {
+	sqlTask := "DELETE FROM items WHERE id=" + strconv.Itoa(id)
+
+	statement, err := db.Prepare(sqlTask)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer statement.Close()
+
+	_, err = statement.Exec()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
