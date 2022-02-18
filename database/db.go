@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -9,8 +10,9 @@ import (
 )
 
 type task struct {
+	ID   int
 	Name string
-	Done int
+	Done bool
 }
 
 func CreateDB() {
@@ -28,8 +30,10 @@ func CreateDB() {
 
 	createTable(db)
 
-	addTask(db, task{Name: "First task", Done: 0})
-	deleteTask(db, 2)
+	// addTask(db, task{Name: "First task", Done: false})
+	// deleteTask(db, 2)
+	displayTasks(db)
+
 }
 
 func createTable(db *sql.DB) {
@@ -87,5 +91,28 @@ func deleteTask(db *sql.DB, id int) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+}
+
+func displayTasks(db *sql.DB) {
+	row, err := db.Query("SELECT * FROM items ORDER BY id")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer row.Close()
+
+	var tasks []task
+
+	for row.Next() {
+		var ID int
+		var name string
+		var done bool
+		row.Scan(&ID, &name, &done)
+		tasks = append(tasks, task{ID, name, done})
+	}
+
+	fmt.Println(tasks)
 
 }
