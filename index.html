@@ -9,8 +9,8 @@
 </head>
 
 <body>
-    <ul id="list">
-    </ul>
+    <div id="tasks">
+    </div>
 
     <script>
         let socket = new WebSocket("ws://localhost:8080/ws")
@@ -27,10 +27,12 @@
             let array = JSON.parse(msg.data)
 
             array.forEach((item) => {
-                let li = document.createElement("li");
-                let text = document.createTextNode(item.name);
-                li.appendChild(text);
-                document.getElementById("list").appendChild(li)
+                let div = document.createElement("div")
+                div.innerHTML = `
+                <input type="checkbox" id=${item.id} name=${item.id}>
+                <label for=${item.id}>${item.name}</label>
+                `
+                document.getElementById("tasks").appendChild(div)
             }
             )
         }
