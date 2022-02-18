@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,9 +11,9 @@ import (
 )
 
 type task struct {
-	ID   int
-	Name string
-	Done bool
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Completed bool   `json:"completed"`
 }
 
 func CreateDB() {
@@ -32,7 +33,7 @@ func createTable(db *sql.DB) {
 	CREATE TABLE IF NOT EXISTS items(
 			ID INTEGER PRIMARY KEY,
 			Name TEXT NOT NULL,
-			Done INTEGER NOT NULL
+			Completed INTEGER NOT NULL
 	);
 	`
 
@@ -41,13 +42,26 @@ func createTable(db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	task1 := task{Name: "Task one", Completed: false}
+	task2 := task{Name: "Task two", Completed: false}
+	task3 := task{Name: "Task three", Completed: false}
+	task4 := task{Name: "Task four", Completed: true}
+	task5 := task{Name: "Task five", Completed: false}
+
+	addTask(db, task1)
+	addTask(db, task2)
+	addTask(db, task3)
+	addTask(db, task4)
+	addTask(db, task5)
+
 }
 
 func addTask(db *sql.DB, task task) {
 	sqlTask := `
 	INSERT OR REPLACE INTO items(
 		Name,
-		Done
+		Completed
 	) values(?, ?)
 	`
 
@@ -59,7 +73,7 @@ func addTask(db *sql.DB, task task) {
 
 	defer statement.Close()
 
-	_, err = statement.Exec(task.Name, task.Done)
+	_, err = statement.Exec(task.Name, task.Completed)
 
 	if err != nil {
 		log.Fatal(err)
@@ -85,7 +99,7 @@ func deleteTask(db *sql.DB, id int) {
 
 }
 
-func DisplayTasks() {
+func DisplayTasks() []byte {
 	db, _ := sql.Open("sqlite3", "ToDoDB.sqlite")
 
 	row, err := db.Query("SELECT * FROM items ORDER BY id")
@@ -102,11 +116,14 @@ func DisplayTasks() {
 	for row.Next() {
 		var ID int
 		var name string
-		var done bool
-		row.Scan(&ID, &name, &done)
-		tasks = append(tasks, task{ID, name, done})
+		var completed bool
+		row.Scan(&ID, &name, &completed)
+		tasks = append(tasks, task{ID, name, completed})
 	}
 
-	fmt.Println(tasks)
+	response, _ := json.Marshal(tasks)
+
+	fmt.Println(string(response))
+	return response
 
 }
