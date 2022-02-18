@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple To Do</title>
+</head>
+
+<body>
+    <ul id="list">
+    </ul>
+
+    <script>
+        let socket = new WebSocket("ws://localhost:8080/ws")
+        console.log("Attempting WS connection")
+
+        socket.onopen = () => {
+            console.log("Succesfully connected to websocket")
+            socket.send("Hello from client")
+        }
+
+
+        socket.onmessage = (msg) => {
+            console.log(msg.data)
+            let array = JSON.parse(msg.data)
+
+            array.forEach((item) => {
+                let li = document.createElement("li");
+                let text = document.createTextNode(item.name);
+                li.appendChild(text);
+                document.getElementById("list").appendChild(li)
+            }
+            )
+        }
+
+        socket.onclose = (ev) => {
+            console.log("Closing socket", ev)
+        }
+    </script>
+</body>
+
+</html>
