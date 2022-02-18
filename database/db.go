@@ -18,10 +18,6 @@ type task struct {
 func CreateDB() {
 	db, err := sql.Open("sqlite3", "ToDoDB.sqlite")
 
-	// var ctx context.Context = context.Background()
-	// ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	// defer cancel()
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,11 +25,6 @@ func CreateDB() {
 	defer db.Close()
 
 	createTable(db)
-
-	// addTask(db, task{Name: "First task", Done: false})
-	// deleteTask(db, 2)
-	displayTasks(db)
-
 }
 
 func createTable(db *sql.DB) {
@@ -94,13 +85,16 @@ func deleteTask(db *sql.DB, id int) {
 
 }
 
-func displayTasks(db *sql.DB) {
+func DisplayTasks() {
+	db, _ := sql.Open("sqlite3", "ToDoDB.sqlite")
+
 	row, err := db.Query("SELECT * FROM items ORDER BY id")
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	defer db.Close()
 	defer row.Close()
 
 	var tasks []task
