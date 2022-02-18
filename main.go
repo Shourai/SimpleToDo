@@ -13,8 +13,6 @@ import (
 func main() {
 	checkDatabaseExistence()
 
-	database.DisplayTasks()
-
 	http.HandleFunc("/ws", serveWebsocket)
 
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
@@ -26,7 +24,9 @@ func checkDatabaseExistence() {
 	}
 }
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
 
 func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -39,18 +39,25 @@ func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Connected!")
 
-	readIncoming(ws)
+	reader(ws)
 }
 
-func readIncoming(conn *websocket.Conn) {
+func reader(conn *websocket.Conn) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("Error: ", err)
+			return
 		}
 
 		fmt.Println(messageType, string(p))
+		writer(conn)
 	}
 
+}
+
+func writer(conn *websocket.Conn) {
+	tasks := database.DisplayTasks()
+	conn.WriteMessage(websocket.TextMessage, tasks)
 }
