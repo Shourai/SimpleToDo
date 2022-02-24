@@ -38,6 +38,7 @@ func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 
 	fmt.Println("Connected!")
+	ws.WriteMessage(websocket.TextMessage, database.DisplayTasks())
 
 	reader(ws)
 }
@@ -52,7 +53,12 @@ func reader(conn *websocket.Conn) {
 		}
 
 		fmt.Println(messageType, string(p))
-		writer(conn)
+		database.AddTask(database.Task{
+			Name:      string(p),
+			Completed: false,
+		})
+
+		// writer(conn)
 	}
 
 }
