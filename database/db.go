@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type task struct {
+type Task struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Completed bool   `json:"completed"`
@@ -42,28 +42,16 @@ func createTable(db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	task1 := task{Name: "Task one", Completed: false}
-	task2 := task{Name: "Task two", Completed: false}
-	task3 := task{Name: "Task three", Completed: false}
-	task4 := task{Name: "Task four", Completed: true}
-	task5 := task{Name: "Task five", Completed: false}
-
-	addTask(db, task1)
-	addTask(db, task2)
-	addTask(db, task3)
-	addTask(db, task4)
-	addTask(db, task5)
-
 }
 
-func addTask(db *sql.DB, task task) {
+func AddTask(task Task) {
 	sqlTask := `
 	INSERT OR REPLACE INTO items(
 		Name,
 		Completed
 	) values(?, ?)
 	`
+	db, _ := sql.Open("sqlite3", "ToDoDB.sqlite")
 
 	statement, err := db.Prepare(sqlTask)
 
@@ -72,6 +60,7 @@ func addTask(db *sql.DB, task task) {
 	}
 
 	defer statement.Close()
+	defer db.Close()
 
 	_, err = statement.Exec(task.Name, task.Completed)
 
@@ -111,14 +100,14 @@ func DisplayTasks() []byte {
 	defer db.Close()
 	defer row.Close()
 
-	var tasks []task
+	var tasks []Task
 
 	for row.Next() {
 		var ID int
 		var name string
 		var completed bool
 		row.Scan(&ID, &name, &completed)
-		tasks = append(tasks, task{ID, name, completed})
+		tasks = append(tasks, Task{ID, name, completed})
 	}
 
 	response, _ := json.Marshal(tasks)
