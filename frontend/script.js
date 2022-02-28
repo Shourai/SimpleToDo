@@ -18,19 +18,12 @@ function checkExists(id) {
 
 socket.onmessage = (msg) => {
     console.log(msg.data)
-    let taskList = JSON.parse(msg.data)
+    let task = JSON.parse(msg.data)
     let list = document.getElementById("ToDoList")
 
-    taskList.forEach(el => {
-        if (!checkExists(el.id)) {
-            let li = document.createElement("li")
-            li.textContent = el.name
-            li.setAttribute("taskid", el.id)
-
-            list.append(li)
-        }
-    });
-
+    let li = document.createElement("li")
+    li.textContent = task.name
+    list.append(li)
 
     // array.forEach((item) => {
     //     let div = document.createElement("div")
@@ -45,6 +38,17 @@ socket.onmessage = (msg) => {
 
 socket.onclose = (ev) => {
     console.log("Closing socket", ev)
+}
+
+function sendOverSocket() {
+    let inputValue = document.getElementById("myInput").value
+
+    if (inputValue === "") {
+        console.log("Input field empty")
+    } else {
+        socket.send(inputValue)
+        document.getElementById("myInput").value = ""
+    }
 }
 
 function addItem() {

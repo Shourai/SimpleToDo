@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -14,6 +15,12 @@ type Task struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Completed bool   `json:"completed"`
+}
+
+func CheckDatabaseExistence() {
+	if _, err := os.Stat("./ToDoDB.sqlite"); err != nil {
+		CreateDB()
+	}
 }
 
 func CreateDB() {
@@ -110,7 +117,17 @@ func DisplayTasks() []byte {
 		tasks = append(tasks, Task{ID, name, completed})
 	}
 
+	lastRow, _ := db.Query("SELECT * FROM Items ORDER BY id DESC LIMIT 1")
+	// var ID int
+	// var name string
+	// var completed bool
+	// lastRow.Scan(&ID, &name, &completed)
+	// lastTask := Task{ID, name, completed}
+
+	fmt.Println(lastRow.Scan())
+
 	response, _ := json.Marshal(tasks)
+	// responseLastTask := json.Marshal(lastTask)
 
 	fmt.Println(string(response))
 	return response

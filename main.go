@@ -1,69 +1,47 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/Shourai/SimpleToDo/database"
-	"github.com/gorilla/websocket"
+	websocket "github.com/Shourai/SimpleToDo/websocket"
 )
 
-func main() {
-	checkDatabaseExistence()
-
-	http.HandleFunc("/ws", serveWebsocket)
-
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
-}
-
-func checkDatabaseExistence() {
-	if _, err := os.Stat("./ToDoDB.sqlite"); err != nil {
-		database.CreateDB()
-	}
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-func serveWebsocket(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r, nil)
+func serveWebsocket(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
+	conn, err := websocket.Upgrade(w, r)
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	defer ws.Close()
+	defer conn.Close()
 
-	fmt.Println("Connected!")
-	ws.WriteMessage(websocket.TextMessage, database.DisplayTasks())
-
-	reader(ws)
-}
-
-func reader(conn *websocket.Conn) {
-	for {
-		messageType, p, err := conn.ReadMessage()
-
-		if err != nil {
-			log.Println("Error: ", err)
-			return
-		}
-
-		fmt.Println(messageType, string(p))
-		database.AddTask(database.Task{
-			Name:      string(p),
-			Completed: false,
-		})
-
-		// writer(conn)
+	client := &websocket.Client{
+		Conn: conn,
+		Pool: pool,
 	}
 
+	pool.Register <- client
+	client.Read()
+
+	// conn.WriteMessage(1, database.DisplayTasks())
 }
 
-func writer(conn *websocket.Conn) {
-	tasks := database.DisplayTasks()
-	conn.WriteMessage(websocket.TextMessage, tasks)
+func setupRoutes() {
+	pool := websocket.NewPool()
+	go pool.Start()
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWebsocket(pool, w, r)
+	})
+	// http.HandleFunc("/ws", serveWebsocket)
+}
+
+func main() {
+	database.CheckDatabaseExistence()
+	setupRoutes()
+
+	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	// log.Fatal(http.ListenAndServeTLS("localhost:8080"))
 }
